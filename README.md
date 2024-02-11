@@ -8,14 +8,14 @@ The mod file "libmcpisissy.so" is meant to be installed on both client and serve
 
 When game instance is a client, your inventory will be saved by intervals of ~30 sec. only upon change, it gets saved either serverside or locally to file. This also means if you die and lose all your stuff, if you exit within the 30 sec. timeframe, you'll get your stuff back :)
 
-When game instance is acting as server, the server will save received inventory data to file by intervals of ~60 sec. This means you should give your clients a fair warning a minute ahead before restarting server, or their most current inventory changes may be lost!  
+When game instance is acting as server, the server will save received inventory data to file by intervals of ~60 sec. unpon changes in the data. This means you should give your clients a fair warning a minute ahead before restarting server, or their most current inventory changes may be lost!  
 
 
-Alongside "libmcpisissy.so" in the mods dir, you also need the (currently) newest version of "libextrapi.so" i.e. mcpi-addons by Bigjango, because the sissy-mod is dependent on a few of it's newest features. Older versions or the currently available v1.2.3 binary of "libextrapi.so" on Bigjango's github wont work, newer versions <i>should</i> work if he don't break backwards compatibility in newer versions ofc. A working example is put together with a compiled "libmcpisissy.so" in a binaries.zip file! :) 
+Alongside "libmcpisissy.so" in the mods dir, you also need the (currently) newest version of "libextrapi.so" i.e. mcpi-addons by Bigjango, because the sissy-mod is dependent on a few of it's newest features. Older versions or the currently available v1.2.3 binary of "libextrapi.so" on Bigjango's github wont work, newer versions <i>should</i> work if he don't break backwards compatibility in newer versions ofc. A working example is put together with a compiled "libmcpisissy.so" in file "binaries.zip" for you anyway! :) 
 
 
-I'm using an older version sdk than the newest, provided in file "sdk_2.4.8.zip", 
-just unzip to ~/minecraft-pi/ OR wherever you want but then edit accordingly in CMakeList.txt!
+If you want to compile, you should know I'm using an older version sdk than the newest, and it is ofc provided 
+in file "sdk_2.4.8.zip", just unzip to ~/minecraft-pi/ OR wherever you want and edit accordingly in CMakeList.txt!
 
 <b>Compile your own and smoke it:</b>
 
