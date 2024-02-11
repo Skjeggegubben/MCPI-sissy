@@ -1,9 +1,6 @@
 #ifdef __cplusplus
-	//#include <iostream>
-	//#include <string>
-	//#include <vector> //b64
 	#include <unordered_map>
-	#include <thread> //For the timers
+	#include <thread> //For the timers/bgThreads
 
 	typedef unsigned char uchar;
 	//Stuff for the manipulating of inventory data

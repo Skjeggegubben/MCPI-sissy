@@ -1,10 +1,6 @@
 #include <filesystem>
 #include <regex>
-//#include <cctype>
-//#include <string>
-//#include <iostream>
 #include <fstream> //For file reading and writing
-//#include <sstream> //For string split function
 
 #include <libreborn/libreborn.h>
 #include <symbols/minecraft.h>
