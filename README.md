@@ -22,7 +22,7 @@ sdk than the newest, and it is ofc provided in file "sdk_2.4.8.zip", just unzip 
 
 Beware that if you want to compile with a newer sdk, you need to change a lot of the code!<br><br>
 
-<h4>Compile your own and smoke it:</h4>
+<h3>Compile your own and smoke it:</h3>
 
 sudo apt install g++-arm-linux-gnueabihf
 
