@@ -42,3 +42,5 @@ cp libmcpisissy.so ~/.minecraft-pi/mods
 The file can also be stripped to a smaller size by doing this:
 
 arm-linux-gnueabihf-strip libmcpisissy.so
+
+<h2>Big thanks to Bigjango, who helped write almost all of it :D :pray: </h2>
