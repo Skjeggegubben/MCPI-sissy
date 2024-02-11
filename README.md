@@ -1,5 +1,6 @@
 # MCPI-sissy
-<u>MCPI <b>S</b>erver <b>I</b>nventory <b>S</b>ecure <b>S</b>torage, <b>Y</b>es!</u>
+
+<h3><u>MCPI <b>S</b>erver <b>I</b>nventory <b>S</b>ecure <b>S</b>torage, <b>Y</b>es!</u></h3>
 
 This is a mod for MCPI-reborn, for all those who can't do their own inventory trickery and just get what they want when they want it! Or a mod that makes your MCPI multiplayer work a tiny bit more like the mickerysoft minecraft does :) Depending on your point of view ofc.
 
