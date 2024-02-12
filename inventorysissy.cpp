@@ -26,6 +26,7 @@ b64class b64; // Make the class object first, then usage: INFO( b64.enc("BMW") )
 
 // If on server without SISSY?
 bool local_fallback = true;                 // Bool that helps determine if we need to save locally as fallback when on this server.
+bool received_inventory = false;            // Bool to help ensure server doesn't keep sending inventory when we don't want MOAR inventory!
 bool game_ready = false;                    // Bool var that will be set to true once Minecraft_isLevelGenerated returns true, i.e. when game is up.
 uint64_t tickMarkerTS = 0;                  // Marker timestamp, for making interval'ish behaviour instead of running all the code on every tick.
 int sec_counter = 0;                        // Int var for counting seconds between intervals.
@@ -56,6 +57,7 @@ void tickFunction(unsigned char *mcpi){     // The function that will run on eve
                 game_ready = true;          // Set bool to true so this wont be repeated!
                 sissyDirCheck();            // Check / create the necessary dir's for the mod!
                 sec_counter = 0;            // Counter must be reset to ensure 0!
+                received_inventory = false; // Reset bool so we can receive again!
                 
                 // Make background thread for loading file data either as server or as client.
                 bgThread initLoadTimer = bgThread();
@@ -158,7 +160,10 @@ void parse_inventory_packet(std::string packetStr, uchar *guid, uchar *callback)
             //INFO(" *** GOT OTHER THAN 'INV'/'OK'!"); // Expecting a base64-string with inventory only!
             if( !isValidBase64( packetStr ) ) return; // Not a base64 string! Heckery server fukcer hm?
             if( packetStr.length() > 1000 || !isInvString( b64.dec(packetStr) ) ) return; // No thanks gtfo!
-            b64_to_inventory(packetStr); // Valid base64 chars, so decode and load into inventory!
+            if(!received_inventory) { 
+                b64_to_inventory(packetStr); // Valid base64 chars, so decode and load into inventory!
+                received_inventory = true; // Set bool var so that we wont accept MOAR than once.
+            } else return; // No thanks, pls dear server, don't spam me, I don't want MOAR inventory!
         }
     }
 }
