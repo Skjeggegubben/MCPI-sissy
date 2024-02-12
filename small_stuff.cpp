@@ -155,10 +155,14 @@ bool isInvString(std::string inv_str){
     for(int i = 0; i < lines.size(); i++){
         vector<string> data = split_str(lines[i], ':');// split by : to get separate values
         if( data.size() != 3) return false;
-		
+		// Check if every value is number
 		for(int i2 = 0; i2 < data.size(); i2++){
 			if( !isNumeric(data[i2]) ) return false;
 		}
+		// Check if number is in range
+		if( stoi(data[0]) < 256 || stoi(data[0]) > 456) return false;
+		if( stoi(data[1]) < 0 || stoi(data[1]) > 65535) return false;
+		if( stoi(data[2]) < 0 || stoi(data[2]) > 255) return false;
     }
     return true;
 }
