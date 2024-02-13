@@ -160,9 +160,9 @@ bool isInvString(std::string inv_str){
 			if( !isNumeric(data[i2]) ) return false;
 		}
 		// Check if number is in range
-		if( stoi(data[0]) < 256 || stoi(data[0]) > 456) return false;
-		if( stoi(data[1]) < 0 || stoi(data[1]) > 65535) return false;
-		if( stoi(data[2]) < 0 || stoi(data[2]) > 255) return false;
+		if( stoi(data[0]) < 0 || stoi(data[0]) > 456) { INFO("data[0] bugs"); return false; }
+		if( stoi(data[1]) < 0 || stoi(data[1]) > 65535) { INFO("data[1] bugs"); return false; }
+		if( stoi(data[2]) < 0 || stoi(data[2]) > 255) { INFO("data[2] bugs"); return false; }
     }
     return true;
 }
