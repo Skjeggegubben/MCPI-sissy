@@ -75,7 +75,8 @@ void tickFunction(unsigned char *mcpi){     // The function that will run on eve
                     bgThreads["initLoadTimer"].setTimeout([&](std::string str1, std::string str2) {
                         // If no reply from server, bool local_fallback is still true.
                         if(local_fallback) file_to_inventory();
-                    }, 5000, "", ""); // Will be executed 5 sec from now.
+                        received_inventory = true; // Don't try fooling us later with false inventory strings we didn't ask for!
+                    }, 5000, "", ""); // Will be executed 5 sec from now. Server reply should be instant within 1-2s.
                 }
                 
             } else return;
