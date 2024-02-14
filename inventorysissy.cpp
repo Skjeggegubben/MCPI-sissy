@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <dirent.h>
+#include <fstream> //For file reading and writing
 
 #include <libreborn/libreborn.h>
 #include <symbols/minecraft.h>
@@ -13,10 +14,10 @@ namespace fs = std::filesystem;
 using namespace std; //so that we don't need that darn std:: in front of everything!
 
 // Declarations, declare vars and functions blah blah..
-unsigned char *minecraft;
+static unsigned char *minecraft;
 static string server = "";
-string inventoryString = "";
-string inv_id = ""; // A random string that will be writtento conf-file, used for id in coms with server.
+static string inventoryString = "";
+static string inv_id = ""; // A random string that will be written to conf-file, used for id in coms with server.
 
 std::unordered_map<std::string, std::string> inventoryDict = {};	// Umap holding user_id + inventory as base64 string.
 std::unordered_map<std::string, std::string> inventoryDict_old = {};// Duplicate umap for comparison before saving.
@@ -25,15 +26,29 @@ std::unordered_map<std::string, struct bgThread> bgThreads = {};	// Umap holding
 b64class b64; // Make the class object first, then usage: INFO( b64.enc("BMW") );
 
 // If on server without SISSY?
-bool local_fallback = true;                 // Bool that helps determine if we need to save locally as fallback when on this server.
-bool received_inventory = false;            // Bool to help ensure server doesn't keep sending inventory when we don't want MOAR inventory!
-bool game_ready = false;                    // Bool var that will be set to true once Minecraft_isLevelGenerated returns true, i.e. when game is up.
-uint64_t tickMarkerTS = 0;                  // Marker timestamp, for making interval'ish behaviour instead of running all the code on every tick.
-int sec_counter = 0;                        // Int var for counting seconds between intervals.
+static bool local_fallback = true;                 // Bool that helps determine if we need to save locally as fallback when on this server.
+static bool received_inventory = false;            // Bool to help ensure server doesn't keep sending inventory when we don't want MOAR inventory!
+static bool game_ready = false;                    // Bool var that will be set to true once Minecraft_isLevelGenerated returns true, i.e. when game is up.
+static uint64_t tickMarkerTS = 0;                  // Marker timestamp, for making interval'ish behaviour instead of running all the code on every tick.
+static int sec_counter = 0;                        // Int var for counting seconds between intervals.
+
+
+// The functions that catches the minecraft obj for us
+static void callback_for_mcpisissy(unsigned char *mcpi) { // Runs on every tick, sets the minecraft var.
+    minecraft = mcpi; 
+    invTickFunction(mcpi); // From here we can call a custom function to run on every tick
+}
 
 
 
-void tickFunction(unsigned char *mcpi){     // The function that will run on every tick.
+// Helper function. Returns the minecraft obj. 
+unsigned char *get_mcObj() {
+    return minecraft;
+}
+
+
+
+static void invTickFunction(unsigned char *mcpi){     // The function that will run on every tick.
 	if (mcpi == NULL) {                     // Ticks start running before we have mcpi, and ofc
         return;                             // without mcpi there is nothing more to do here but return.
     }
@@ -51,9 +66,9 @@ void tickFunction(unsigned char *mcpi){     // The function that will run on eve
                             // level is generated, it is time to do important stuff needed at game startup. Afterwards this part gets skipped.
             
             if ((*Minecraft_isLevelGenerated)(mcpi)){   // Got level, minecraft obj, all up and running and all is presumably good to go!
-                INFO(" *** GAME IS READY!!!! ***");
+                INFO("[MCPISISSY]: GAME IS READY!");
                 local_fallback = true;      // This turns to 'false' if server responds to INV request.
-                server = serverFilename( get_server_name() ); // In case of fallback saving to file, we need the server name. 
+                server = server_name(); 	// In case of fallback saving to file, we need the server name. 
                 game_ready = true;          // Set bool to true so this wont be repeated!
                 sissyDirCheck();            // Check / create the necessary dir's for the mod!
                 sec_counter = 0;            // Counter must be reset to ensure 0!
@@ -84,7 +99,7 @@ void tickFunction(unsigned char *mcpi){     // The function that will run on eve
             // THIS PART repeats every sec. after game has started.
             if( !(*Minecraft_isLevelGenerated)(mcpi) ){ // Check if game still up once per sec.
                 game_ready = false;
-                INFO(" *** GAME OVER! *** ");
+                INFO("[MCPISISSY]: GAME OVER!");
             } else {
                 // The game is still running, so here's the spot for in-game interval'ed stuff:
                 if(!self_is_server() ){ // Client saves/sends inventory string every 30 sec.
@@ -172,7 +187,7 @@ void parse_inventory_packet(std::string packetStr, uchar *guid, uchar *callback)
 
 
 // Function for server, loads inventory strings from files
-void load_saved_inventories(){	
+static void load_saved_inventories(){	
     std::string thePath(home_get());
     thePath.append("/mcpisissy/received_as_server/");
     
@@ -191,7 +206,7 @@ void load_saved_inventories(){
                 inventoryDict_old[filenameStr] = inventoryAsB64; // We keep a duplicate to check if saving is needed!
 			}
 		}
-        INFO(" -USER INVENTORIES FROM FILES LOADED!");
+        INFO("[MCPISISSY]: USER INVENTORIES FROM FILES LOADED!");
     }
     closedir(dp);
 }
@@ -199,7 +214,7 @@ void load_saved_inventories(){
 
 
 // Function for server, saves inventories from umap to files
-void save_loaded_inventories(){
+static void save_loaded_inventories(){
     bool changed = false;
     std::string thePath(home_get());
     thePath.append("/mcpisissy/received_as_server/");    
@@ -215,25 +230,19 @@ void save_loaded_inventories(){
 
 
 
-// The functions that catches the minecraft obj for us
-void mcpi_callback(unsigned char *mcpi) { // Runs on every tick, sets the minecraft var.
-    minecraft = mcpi; 
-    tickFunction(mcpi); // From here we can call a custom function to run on every tick
+
+// Function to make unix timestamp in ms since epoch.
+static uint64_t get_ms_unixTS(){
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-
-
-// Helper function. Returns the minecraft obj. 
-unsigned char *get_minecraft() {
-    return minecraft;
-}
 
 
 
 // Gets inventory, needed for loading stuff into inventory
-uchar *get_inventory() { 
+static uchar *get_inventory() { 
     // Get minecraft and the player
-    uchar *player = *(uchar **) ( get_minecraft() + Minecraft_player_property_offset);
+    uchar *player = *(uchar **) ( get_mcObj() + Minecraft_player_property_offset);
     if (player != NULL) { // Get the player inventory
         uchar *inventory = *(uchar **) (player + Player_inventory_property_offset);
         return inventory;
@@ -244,7 +253,7 @@ uchar *get_inventory() {
 
 
 // The function that converts inventory data to base64 string for saving
-void inventory_to_b64(){
+static void inventory_to_b64(){
     std::string invStr = inv2str();
     if(invStr == "ERROR") return; // Maybe game has crashed? Let's hope never happens!
     if(invStr != inventoryString){ // Only save if there is a change!
@@ -257,7 +266,7 @@ void inventory_to_b64(){
 
 
 // The function that loads inventory from base64 string to items in inventory
-void b64_to_inventory(std::string inputStr){
+static void b64_to_inventory(std::string inputStr){
     // Called once, right after connecting to server if having received b64-string
     std::string inv_str = b64.dec(inputStr);
     str2inv(inv_str);
@@ -266,7 +275,7 @@ void b64_to_inventory(std::string inputStr){
 
 
 // The fallback to save inventory to local file when server lacks INV support.
-void inventory_to_file(){
+static void inventory_to_file(){
     std::string invStr = inv2str();
     if(invStr == "ERROR") return; // Maybe game has crashed? Let's hope never happens!
     if(invStr != inventoryString){ //Only save to file if there is a change!
@@ -281,7 +290,7 @@ void inventory_to_file(){
 
 
 // The fallback to load inventory from local file when server lacks INV support.
-void file_to_inventory(){
+static void file_to_inventory(){
     std::string fallbackPath(home_get());
     fallbackPath.append("/mcpisissy/fallback_local_saves/" + server + ".inventory");
     if( fs::exists(fallbackPath) ) {
@@ -293,7 +302,7 @@ void file_to_inventory(){
 
 
 // Function for getting inventory data into inventory, from string
-void str2inv(std::string inv_str){
+static void str2inv(std::string inv_str){
     //showInfo("Trying to load inventory!");
     inventoryString = "";
     uchar *inventory = get_inventory();
@@ -316,7 +325,7 @@ void str2inv(std::string inv_str){
 
 
 // Function for retrieving current inventory data as string
-std::string inv2str(){
+static std::string inv2str(){
     string tmpStr = ""; // make new string to put values into
     uchar *inventory = get_inventory(); // make sure that inventory is accessible
     if (inventory == NULL) {
@@ -338,7 +347,87 @@ std::string inv2str(){
 
 
 
+
+// For saving string to file, named after the php-function
+static void file_put_contents(std::string thePath, std::string saveStr){
+    ofstream outfile;
+    outfile.open(thePath, std::ios_base::trunc); // 'app' for append, 'trunc' overwrite
+    outfile << saveStr;
+}
+
+
+
+// For reading the contents of a file, named after the php-function
+static std::string file_get_contents(std::string file){
+    std::ifstream input_file( file );
+	std::string resultStr = "";
+    if ( ( !input_file.good() ) || ( !input_file.is_open() )  ) { 
+        ERR("Error with file %s", file.c_str());
+    } else { 
+        std::string theLine;
+        while (std::getline(input_file, theLine)){
+			resultStr += theLine + '\n';
+		}
+   }
+    return resultStr; 
+}
+
+
+
+
+// Function that determines if on external server or not
+static bool on_ext_server() {
+    if( self_is_server() ) return false;
+    bool on_ext_srv = *(bool *) (*(unsigned char **) (get_mcObj() + Minecraft_level_property_offset) + 0x11);
+    return on_ext_srv;
+}
+
+
+
+// Function needed for self_is_server() 
+static bool got_raknetInstance(){
+    return ( *(unsigned char **) (get_mcObj() + Minecraft_rak_net_instance_property_offset) != NULL ) ? true : false;
+}
+
+
+
+// Function to check if game instance is currently acting as server
+static bool self_is_server(){
+    if(!got_raknetInstance() ) return false; // If got raknetInstance then check RakNetInstance_isServer.
+    unsigned char *rak_net_instance = *(unsigned char **) (get_mcObj() + Minecraft_rak_net_instance_property_offset);
+    unsigned char *rak_net_instance_vtable = *(unsigned char**) rak_net_instance;
+    RakNetInstance_isServer_t RakNetInstance_isServer = *(RakNetInstance_isServer_t *) (rak_net_instance_vtable + RakNetInstance_isServer_vtable_offset);
+    return ((*RakNetInstance_isServer)(rak_net_instance)) ? true : false;
+}
+
+
+
+
+
+// Function for printing some debug info directly to game screen
+static void showInfo(string text){ 
+    unsigned char *gui = get_mcObj() + Minecraft_gui_property_offset;
+    misc_add_message(gui, text.c_str() );
+}
+
+
+// For filename-sanitizing server name, make it safe for filename
+static std::string server_name() {
+//std::string server_name(const std::string& str) {
+	std::string srvStr = get_server_name();
+	std::string retStr = "";
+	for (char c : srvStr) {
+		if ( ( c == '/') || (!isalnum(c) && c != '_' && c != '.') ) {
+			retStr += '_';
+		} else {
+			retStr += c;
+		}
+	}
+	return retStr;
+}
+
+
 //The "main" function that starts when you run game
 __attribute__((constructor)) static void init() {
-    misc_run_on_update(mcpi_callback);
+    misc_run_on_update(callback_for_mcpisissy);
 }

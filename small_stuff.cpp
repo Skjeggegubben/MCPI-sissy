@@ -14,7 +14,7 @@ using namespace std; //so that we don't need that darn std:: in front of everyth
 std::unordered_map<std::string, std::string> invKeyDict = {};	// Umap holding server name and client_id key
 
 // Check if path+dir exists
-bool existsDir(const std::string& thePath) {
+static bool existsDir(const std::string& thePath) {
     fs::path directory(thePath);
     return fs::exists(directory) && fs::is_directory(directory);
 }
@@ -22,7 +22,7 @@ bool existsDir(const std::string& thePath) {
 
 
 // Function for creating the dirs we need for storage
-void createDir(const std::string& thePath) {
+static void createDir(const std::string& thePath) {
     fs::path dir(thePath);
     fs::create_directories(dir);
 }
@@ -44,10 +44,6 @@ vector<string> split_str(string str, char theChar) {
 
 
 
-// Function to make unix timestamp in ms since epoch.
-uint64_t get_ms_unixTS(){
-	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-}
 
 
 /* maybe needed.. hm
@@ -74,34 +70,10 @@ bool all_allowed_chars(const std::string& str) {
 }
 
 
-// For saving string to file, named after the php-function
-void file_put_contents(std::string thePath, std::string saveStr){
-    ofstream outfile;
-    outfile.open(thePath, std::ios_base::trunc); // 'app' for append, 'trunc' overwrite
-    outfile << saveStr;
-}
-
-
-
-// For reading the contents of a file, named after the php-function
-std::string file_get_contents(std::string file){
-    std::ifstream input_file( file );
-	std::string resultStr = "";
-    if ( ( !input_file.good() ) || ( !input_file.is_open() )  ) { 
-        ERR("Error with file %s", file.c_str());
-    } else { 
-        std::string theLine;
-        while (std::getline(input_file, theLine)){
-			resultStr += theLine + '\n';
-		}
-   }
-    return resultStr; 
-}
-
 
 
 // Function that returns a random-ish string of given len.
-std::string randomStr(int length) {// Function to generate somewhat random alphanumeric string of requested length.
+static std::string randomStr(int length) {// Function to generate somewhat random alphanumeric string of requested length.
     static std::string charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     std::string result;
     result.resize(length);
@@ -112,43 +84,10 @@ std::string randomStr(int length) {// Function to generate somewhat random alpha
 }
 
 
-// Function for printing some debug info directly to game screen
-void showInfo(string text){ 
-    unsigned char *gui = get_minecraft() + Minecraft_gui_property_offset;
-    misc_add_message(gui, text.c_str() );
-}
 
 
 
-
-// Function that determines if on external server or not
-bool on_ext_server() {
-    if( self_is_server() ) return false;
-    bool on_ext_srv = *(bool *) (*(unsigned char **) (get_minecraft() + Minecraft_level_property_offset) + 0x11);
-    return on_ext_srv;
-}
-
-
-
-// Function needed for self_is_server() 
-bool got_raknetInstance(){
-    return ( *(unsigned char **) (get_minecraft() + Minecraft_rak_net_instance_property_offset) != NULL ) ? true : false;
-}
-
-
-
-// Function to check if game instance is currently acting as server
-bool self_is_server(){
-    if(!got_raknetInstance() ) return false; // If got raknetInstance then check RakNetInstance_isServer.
-    unsigned char *rak_net_instance = *(unsigned char **) (get_minecraft() + Minecraft_rak_net_instance_property_offset);
-    unsigned char *rak_net_instance_vtable = *(unsigned char**) rak_net_instance;
-    RakNetInstance_isServer_t RakNetInstance_isServer = *(RakNetInstance_isServer_t *) (rak_net_instance_vtable + RakNetInstance_isServer_vtable_offset);
-    return ((*RakNetInstance_isServer)(rak_net_instance)) ? true : false;
-}
-
-
-
-// Function for sanitizing inventory data received from clients
+// Function for sanitizing received inventory data 
 bool isInvString(std::string inv_str){
     vector<string> lines = split_str(inv_str, '\n');
     if(lines.size() != 36) return false;
@@ -170,7 +109,7 @@ bool isInvString(std::string inv_str){
 
 
 // Function to check if a string is digits or not
-bool isNumeric(const std::string& str) {
+static bool isNumeric(const std::string& str) {
   const std::regex pattern("^[0-9]+$");
   return std::regex_match(str, pattern);
 }
@@ -213,9 +152,11 @@ std::string get_inv_id(std::string serverName){
     // Open conf file
     file.append("/mcpisissy/keyfiles/" + serverName + ".conf");
     std::ifstream conf_file(file);
-
+    //std::string random_id = "";
+    
     if (!conf_file.good()) { // Check it, if not exists it will be written
         std::string random_id = randomStr(25);
+        //std::static string random_id = randomStr(25);
         std::ofstream file_output(file);
         file_output << "# DO NOT CHANGE THIS!\n";
         file_output << "inv_id=" << random_id << "\n";
@@ -253,15 +194,3 @@ std::string get_inv_id(std::string serverName){
 
 
 
-// For filename-sanitizing server name, make it safe for filename
-std::string serverFilename(const std::string& str) {
-	std::string retStr = "";
-	for (char c : str) {
-		if ( ( c == '/') || (!isalnum(c) && c != '_' && c != '.') ) {
-			retStr += '_';
-		} else {
-			retStr += c;
-		}
-	}
-	return retStr;
-}

@@ -11,7 +11,7 @@
 void send_inventory_packet(std::string strArg, uchar *guid, uchar *callback){// Neat function for just shipping off a string in a custom packet
 	int intArg = strArg.size(); // Need to get the string length so we can feed it as arg along with the string
     uchar *packet = make_custom_packet(intArg, strArg);	// to the make_custom_packet function :) 
-    uchar *rak_net_instance = *(uchar **) ( get_minecraft() + Minecraft_rak_net_instance_property_offset); // This and next lines just sends it.. 
+    uchar *rak_net_instance = *(uchar **) ( get_mcObj() + Minecraft_rak_net_instance_property_offset); // This and next lines just sends it.. 
     if(guid == NULL){
 		RakNetInstance_send_t RakNetInstance_send = *(RakNetInstance_send_t *) (*(uchar **) rak_net_instance + RakNetInstance_send_vtable_offset);
     	RakNetInstance_send(rak_net_instance, packet); // And poof the custom packet is sent :)
