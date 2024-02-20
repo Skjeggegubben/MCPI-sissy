@@ -12,12 +12,9 @@ When game instance is a client, your inventory will be saved by intervals of ~30
 
 When game instance is acting as server, the server will save received inventory data to file by intervals of ~60 sec. unpon changes in the data. This means you should give your clients a fair warning a minute ahead before restarting server, or their most current inventory changes may be lost!<br><br>
 
+Put the file "libmcpisissy.so" in your  ~/minecraft-pi/mods/ and start your game! :)<br><br>
+
 <h4>IMPORTANT</h4>
-Alongside "libmcpisissy.so" in the mods dir, you also need the (currently) newest version of "libextrapi.so" i.e. mcpi-addons by Bigjango, because the sissy-mod is dependent on a few of it's newest features. Older versions or the currently available v1.2.3 binary of "libextrapi.so" on Bigjango's github wont work, newer versions <i>should</i> work if he don't break backwards compatibility in newer versions ofc. A working compiled "libextrapi.so" is put together with a compiled "libmcpisissy.so" in file "binaries.zip" for you anyway!<br><br>
-
-Unzip both to ~/minecraft-pi/mods/ and start your game! :)<br><br>
-
-
 <b>If you want to compile by yourself</b>, you should know I'm using an older version 
 sdk than the newest, and it is ofc provided in file "sdk_2.4.8.zip", just unzip to 
 ~/minecraft-pi/ OR wherever you want and edit accordingly in CMakeList.txt!<br><br>
