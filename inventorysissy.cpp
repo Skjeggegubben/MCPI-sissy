@@ -17,7 +17,8 @@ using namespace std; //so that we don't need that darn std:: in front of everyth
 static unsigned char *minecraft;
 static string server = "";
 static string inventoryString = "";
-static string inv_id = ""; // A random string that will be written to conf-file, used for id in coms with server.
+static string inv_id = "";              // A random string that will be written to conf-file, used for id in coms with server.
+static std::string server_motd = "";    // String to help determine server name (for fallback saving to file).
 
 std::unordered_map<std::string, std::string> inventoryDict = {};	// Umap holding user_id + inventory as base64 string.
 std::unordered_map<std::string, std::string> inventoryDict_old = {};// Duplicate umap for comparison before saving.
@@ -201,7 +202,7 @@ static void load_saved_inventories(){
 			if( filenameStr != "." && filenameStr != ".." ){
 				std::string pathToFile = thePath + filenameStr;
 				std::string inventoryAsB64 = file_get_contents(pathToFile);
-                if( inventoryAsB64.back() == '\n') inventoryAsB64.pop_back(); // Remove nasty linebreak!
+                //if( inventoryAsB64.back() == '\n') inventoryAsB64.pop_back(); // Remove nasty linebreak!
 				inventoryDict[filenameStr] = inventoryAsB64;
                 inventoryDict_old[filenameStr] = inventoryAsB64; // We keep a duplicate to check if saving is needed!
 			}
@@ -360,18 +361,18 @@ static void file_put_contents(std::string thePath, std::string saveStr){
 // For reading the contents of a file, named after the php-function
 static std::string file_get_contents(std::string file){
     std::ifstream input_file( file );
-	std::string resultStr = "";
+    std::string resultStr = "";
     if ( ( !input_file.good() ) || ( !input_file.is_open() )  ) { 
         ERR("Error with file %s", file.c_str());
     } else { 
         std::string theLine;
         while (std::getline(input_file, theLine)){
-			resultStr += theLine + '\n';
-		}
-   }
+            resultStr += theLine + '\n';
+        }
+    }
+    resultStr.pop_back(); // Remove nasty linebreak!
     return resultStr; 
 }
-
 
 
 
@@ -414,7 +415,7 @@ static void showInfo(string text){
 // For filename-sanitizing server name, make it safe for filename
 static std::string server_name() {
 //std::string server_name(const std::string& str) {
-	std::string srvStr = get_server_name();
+	std::string srvStr = get_server_motd();
 	std::string retStr = "";
 	for (char c : srvStr) {
 		if ( ( c == '/') || (!isalnum(c) && c != '_' && c != '.') ) {
@@ -427,7 +428,23 @@ static std::string server_name() {
 }
 
 
+static std::string get_server_motd() {
+    return server_motd;
+}
+
+
+static bool Minecraft_joinMP_injection(uchar *self, uchar *server) {
+    unsigned char *shared_string = *(unsigned char **) (server + RakNet_RakString_sharedString_property_offset);
+    char *c_str = *(char **) (shared_string + RakNet_RakString_SharedString_c_str_property_offset);
+    server_motd = c_str;
+    return Minecraft_joinMultiplayer(self, server);
+}
+
+
 //The "main" function that starts when you run game
 __attribute__((constructor)) static void init() {
-    misc_run_on_update(callback_for_mcpisissy);
+    // Patch Minecraft::joinMultiplayer
+    overwrite_calls((void *) Minecraft_joinMultiplayer, (void *) Minecraft_joinMP_injection);    
+    
+    misc_run_on_update(callback_for_mcpisissy);  
 }

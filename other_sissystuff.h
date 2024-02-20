@@ -3,9 +3,17 @@
 	#include <thread> //For the timers/bgThreads
 
 	typedef unsigned char uchar;
-	//Stuff for the manipulating of inventory data
+	// Stuff for the manipulating of inventory data
 	typedef unsigned char *(*Inventory_t)(unsigned char *inventory, unsigned char *player, uint32_t is_creative);
 	static Inventory_t Inventory = (Inventory_t) 0x8e768;
+	
+	// Stuff for getting server name / i.e. MOTD
+	typedef bool (*Minecraft_joinMultiplayer_t)(uchar *self, uchar *server);
+	static Minecraft_joinMultiplayer_t Minecraft_joinMultiplayer = (Minecraft_joinMultiplayer_t) 0x165f4;
+
+	static bool Minecraft_joinMP_injection(uchar *self, uchar *server);
+	static std::string get_server_motd();
+
 
 
 	// CANNOT BE STATIC, SHARED BETWEEN .CPP FILES
@@ -116,8 +124,8 @@
 	extern "C" {
 		char *home_get();
 
-		std::string get_server_name();
-		bool in_local_world();
+		//std::string get_server_name();
+		//bool in_local_world();
 	}
 
 #endif

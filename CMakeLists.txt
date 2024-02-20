@@ -19,5 +19,5 @@ target_link_libraries(mcpisissy mods-headers reborn-patch symbols misc home)
 target_compile_features(mcpisissy PRIVATE cxx_std_17) 
 
 # In order to use functions from libextrapi.so refered to by extern:
-find_library(LIBRARY_NAME libextrapi.so PATHS "$ENV{HOME}/.minecraft-pi/mods")
-target_link_libraries(mcpisissy ${LIBRARY_NAME})
+#find_library(LIBRARY_NAME libextrapi.so PATHS "$ENV{HOME}/.minecraft-pi/mods")
+#target_link_libraries(mcpisissy ${LIBRARY_NAME})
